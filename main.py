@@ -4,95 +4,97 @@ from feature_engineering import create_features
 from models.sarima_model import run_sarima
 from models.prophet_model import run_prophet
 from models.xgboost_model import run_xgboost
+from models.lightgbm_model import run_lightgbm
 
 from evaluation.metrics import mape
 
 
-# -------------------
+# ------------------
 # Load data
-# -------------------
+# ------------------
 
 df = load_data("raw_data/tourist_data.xlsx")
 
+
+# ------------------
+# Feature engineering
+# ------------------
+
 df = create_features(df)
 
+df = df.dropna()
 
-# -------------------
-# Train test split
-# -------------------
 
-train = df.loc["2021":"2024"]
+# ------------------
+# Train / Test split
+# ------------------
+
+train = df.loc["2022":"2024"]
 test = df.loc["2025"]
 
 
-# -------------------
+# ------------------
 # SARIMA
-# -------------------
+# ------------------
 
-sarima_forecast = run_sarima(
+sarima_pred = run_sarima(
     train["TOTAL"],
     test["TOTAL"]
 )
 
-sarima_mape = mape(test["TOTAL"], sarima_forecast)
-
-print("SARIMA MAPE:", sarima_mape)
+print("SARIMA MAPE:", mape(test["TOTAL"], sarima_pred))
 
 
-# -------------------
+# ------------------
 # Prophet
-# -------------------
+# ------------------
 
-prophet_forecast = run_prophet(
+prophet_pred = run_prophet(
     train,
     test
 )
 
-prophet_mape = mape(test["TOTAL"], prophet_forecast)
-
-print("Prophet MAPE:", prophet_mape)
+print("Prophet MAPE:", mape(test["TOTAL"], prophet_pred))
 
 
-# -------------------
-# XGBoost
-# -------------------
+# ------------------
+# Feature list
+# ------------------
 
 features = [
-    "month",
-    "week",
-    "dayofweek",
-    "dayofyear",
-    "is_weekend",
 
-    "Holiday",
-    "is_holiday",
-    "is_long_holiday",
+"dayofweek",
+"month",
+"weekofyear",
+"dayofyear",
 
-    "lag_1",
-    "lag_7",
-    "lag_14",
-    "lag_30",
-    "lag_2",
-    "lag_3",
-    "lag_365",
-    
+"is_weekend",
+"is_holiday",
 
-    "rolling_mean_7",
-    "rolling_mean_14",
-    "rolling_mean_30",
-    "rolling_mean_3",
+"lag_1",
+"lag_7",
+"lag_14",
+"lag_30",
 
-    "rolling_std_14",
-    "rolling_std_7"
+"rolling_mean_7",
+"rolling_mean_14",
+"rolling_mean_30",
+
+"rolling_std_7"
+
 ]
-df = create_features(df)
 
-df = df.dropna()
 
 X_train = train[features]
 X_test = test[features]
 
 y_train = train["TOTAL"]
+y_test = test["TOTAL"]
+
+
+# ------------------
+# XGBoost
+# ------------------
 
 xgb_pred = run_xgboost(
     X_train,
@@ -100,6 +102,17 @@ xgb_pred = run_xgboost(
     X_test
 )
 
-xgb_mape = mape(test["TOTAL"], xgb_pred)
+print("XGBoost MAPE:", mape(y_test, xgb_pred))
 
-print("XGBoost MAPE:", xgb_mape)
+
+# ------------------
+# LightGBM
+# ------------------
+
+lgb_pred = run_lightgbm(
+    X_train,
+    y_train,
+    X_test
+)
+
+print("LightGBM MAPE:", mape(y_test, lgb_pred))

@@ -1,14 +1,14 @@
-from xgboost import XGBRegressor
+import lightgbm as lgb
 
-def run_xgboost(X_train, y_train, X_test):
+def run_lightgbm(X_train, y_train, X_test):
 
-    model = XGBRegressor(
+    model = lgb.LGBMRegressor(
 
         n_estimators=3000,
         learning_rate=0.01,
 
-        max_depth=8,
-        min_child_weight=3,
+        max_depth=-1,
+        num_leaves=64,
 
         subsample=0.8,
         colsample_bytree=0.8,
